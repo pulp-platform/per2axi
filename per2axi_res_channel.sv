@@ -92,6 +92,7 @@ module per2axi_res_channel
             if ( axi_master_b_valid_i == 1'b1 )
             begin
                per_slave_r_valid_o                 = 1'b1;
+               per_slave_r_rdata_o                 = {{{AXI_DATA_WIDTH-1}{0}} ,~axi_master_b_resp_i[0]}; // Forward response to core
                per_slave_r_id_o[axi_master_b_id_i] = 1'b1;
                axi_master_r_ready_o                = 1'b0;
                if ( axi_master_b_resp_i == 2'b10 ) // slave error -> RAB miss
