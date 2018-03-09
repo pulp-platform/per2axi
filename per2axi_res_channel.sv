@@ -75,7 +75,7 @@ module per2axi_res_channel
         axi_master_b_ready_o = '1;
         axi_xresp_slverr_o   = '0;
         axi_xresp_valid_o    = '0;
-        
+
         if ( axi_master_r_valid_i == 1'b1 )
         begin
              per_slave_r_valid_o  = 1'b1;
@@ -92,9 +92,17 @@ module per2axi_res_channel
             if ( axi_master_b_valid_i == 1'b1 )
             begin
                per_slave_r_valid_o                 = 1'b1;
-               per_slave_r_rdata_o                 = {{{AXI_DATA_WIDTH-1}{0}} ,~axi_master_b_resp_i[0]}; // Forward response to core
                per_slave_r_id_o[axi_master_b_id_i] = 1'b1;
                axi_master_r_ready_o                = 1'b0;
+
+               // Forward response/error to core
+               // axi_master_b_resp_i[1:0] -> per_slave_r_rdata_o[1:0]
+               // 00 -> 01
+               // 01 -> 00
+               // 10 -> 10
+               // 11 -> 11
+               // per_slave_r_rdata_o = {'{{AXI_DATA_WIDTH-2}{0}} ,axi_master_b_resp_i[1],axi_master_b_resp_i[1] ~^ axi_master_b_resp_i[0]};
+               per_slave_r_rdata_o = {30'b0 ,axi_master_b_resp_i[1],axi_master_b_resp_i[1] ~^ axi_master_b_resp_i[0]};
                if ( axi_master_b_resp_i == 2'b10 ) // slave error -> RAB miss
                begin
                   axi_xresp_slverr_o[axi_master_b_id_i] = 1'b1;

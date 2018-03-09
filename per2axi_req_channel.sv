@@ -10,6 +10,8 @@
 
 // Davide Rossi <davide.rossi@unibo.it>
 
+import riscv_defines::*;
+
 module per2axi_req_channel
 #(
    // PARAMETERS
@@ -195,7 +197,7 @@ module per2axi_req_channel
    // use FIXED burst type, length is anyway 0
    assign axi_master_aw_burst_o = 2'b00;
    assign axi_master_ar_burst_o = 2'b00;
-   
+
    // TRANSACTION REQUEST GENERATION
    assign trans_req_o = axi_master_ar_valid_o;
    assign trans_id_o  = axi_master_ar_id_o;
