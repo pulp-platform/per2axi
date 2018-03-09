@@ -30,6 +30,7 @@ module per2axi_req_channel
    input  logic                      per_slave_req_i,
    input  logic [PER_ADDR_WIDTH-1:0] per_slave_add_i,
    input  logic                      per_slave_we_i,
+   input  logic [5:0]                per_slave_atop_i,
    input  logic [31:0]               per_slave_wdata_i,
    input  logic [3:0]                per_slave_be_i,
    input  logic [PER_ID_WIDTH-1:0]   per_slave_id_i,
@@ -111,11 +112,25 @@ module per2axi_req_channel
                axi_master_ar_valid_o = 1'b1;
             end
      end
-   
+
+    // AXI ATOMIC ACCESS LOCK GENERATION
+    always_comb
+    begin
+        axi_master_aw_lock_o   = 1'b0;
+        axi_master_ar_lock_o   = 1'b0;
+
+        if (per_slave_atop_i == AMO_LR) begin       // ATOMIC LOAD-RESERVED OPERATION
+            axi_master_ar_lock_o   = 1'b1;
+        end
+        else if (per_slave_atop_i == AMO_SC) begin  // ATOMIC STORE-CONDITIONAL OPERATION
+            axi_master_aw_lock_o   = 1'b1;
+        end
+    end
+
    // AXI ADDRESS GENERATION
    assign axi_master_aw_addr_o = per_slave_add_i;
    assign axi_master_ar_addr_o = per_slave_add_i;
-   
+
    // AXI ID GENERATION - ONEHOT TO BIN DECODING
    always_comb
      begin
@@ -176,7 +191,7 @@ module per2axi_req_channel
                  axi_master_aw_size_o = 3'b010;
               end
      end // always_comb begin
-   
+
    // use FIXED burst type, length is anyway 0
    assign axi_master_aw_burst_o = 2'b00;
    assign axi_master_ar_burst_o = 2'b00;
@@ -185,20 +200,18 @@ module per2axi_req_channel
    assign trans_req_o = axi_master_ar_valid_o;
    assign trans_id_o  = axi_master_ar_id_o;
    assign trans_add_o = axi_master_ar_addr_o;
-   
-   // UNUSED SIGNALS 
+
+   // UNUSED SIGNALS
    assign axi_master_aw_prot_o   = '0;
    assign axi_master_aw_region_o = '0;
    assign axi_master_aw_len_o    = '0;
-   assign axi_master_aw_lock_o   = '0;
    assign axi_master_aw_cache_o  = '0;
    assign axi_master_aw_qos_o    = '0;
    assign axi_master_aw_user_o   = axi_axuser_i[axi_master_aw_id_o];
-   
+
    assign axi_master_ar_prot_o   = '0;
    assign axi_master_ar_region_o = '0;
    assign axi_master_ar_len_o    = '0;
-   assign axi_master_ar_lock_o   = '0;
    assign axi_master_ar_cache_o  = '0;
    assign axi_master_ar_qos_o    = '0;
    assign axi_master_ar_user_o   = axi_axuser_i[axi_master_aw_id_o];
