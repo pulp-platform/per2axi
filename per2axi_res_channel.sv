@@ -13,6 +13,7 @@
 module per2axi_res_channel
 #(
    // PARAMETERS
+   parameter NB_CORES       = 4,
    parameter PER_ADDR_WIDTH = 32,
    parameter PER_ID_WIDTH   = 5,
    parameter AXI_ADDR_WIDTH = 32,
@@ -31,6 +32,10 @@ module per2axi_res_channel
    output logic                      per_slave_r_opc_o,
    output logic [PER_ID_WIDTH-1:0]   per_slave_r_id_o,
    output logic [31:0]               per_slave_r_rdata_o,
+
+   // TRYX CTRL
+   output logic [NB_CORES-1:0]       axi_xresp_slverr_o,
+   output logic [NB_CORES-1:0]       axi_xresp_valid_o,
 
    // AXI4 MASTER
    //***************************************
@@ -68,6 +73,8 @@ module per2axi_res_channel
         per_slave_r_rdata_o  = '0;
         axi_master_r_ready_o = '1;
         axi_master_b_ready_o = '1;
+        axi_xresp_slverr_o   = '0;
+        axi_xresp_valid_o    = '0;
         
         if ( axi_master_r_valid_i == 1'b1 )
         begin
@@ -75,6 +82,11 @@ module per2axi_res_channel
              per_slave_r_id_o[axi_master_r_id_i] = 1'b1;
              per_slave_r_rdata_o  = s_per_slave_r_data;
              axi_master_b_ready_o = 1'b0;
+             if ( axi_master_r_resp_i == 2'b10 ) // slave error -> RAB miss
+             begin
+                axi_xresp_slverr_o[axi_master_r_id_i] = 1'b1;
+                axi_xresp_valid_o [axi_master_r_id_i] = 1'b1;
+             end
         end
         else
             if ( axi_master_b_valid_i == 1'b1 )
@@ -82,6 +94,11 @@ module per2axi_res_channel
                per_slave_r_valid_o                 = 1'b1;
                per_slave_r_id_o[axi_master_b_id_i] = 1'b1;
                axi_master_r_ready_o                = 1'b0;
+               if ( axi_master_b_resp_i == 2'b10 ) // slave error -> RAB miss
+               begin
+                  axi_xresp_slverr_o[axi_master_b_id_i] = 1'b1;
+                  axi_xresp_valid_o [axi_master_b_id_i] = 1'b1;
+               end
             end
    end
    

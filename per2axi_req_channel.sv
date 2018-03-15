@@ -13,6 +13,7 @@
 module per2axi_req_channel
 #(
    // PARAMETERS
+   parameter NB_CORES       = 4,
    parameter PER_ADDR_WIDTH = 32,
    parameter PER_ID_WIDTH   = 5,
    parameter AXI_ADDR_WIDTH = 32,
@@ -33,6 +34,9 @@ module per2axi_req_channel
    input  logic [3:0]                per_slave_be_i,
    input  logic [PER_ID_WIDTH-1:0]   per_slave_id_i,
    output logic                      per_slave_gnt_o,
+
+   // TRYX CTRL
+   input  logic [NB_CORES-1:0][AXI_USER_WIDTH-1:0] axi_axuser_i,
 
    // AXI4 MASTER
    //***************************************
@@ -173,8 +177,9 @@ module per2axi_req_channel
               end
      end // always_comb begin
    
-   assign axi_master_aw_burst_o = 2'b01;
-   assign axi_master_ar_burst_o = 2'b01;
+   // use FIXED burst type, length is anyway 0
+   assign axi_master_aw_burst_o = 2'b00;
+   assign axi_master_ar_burst_o = 2'b00;
    
    // TRANSACTION REQUEST GENERATION
    assign trans_req_o = axi_master_ar_valid_o;
@@ -188,7 +193,7 @@ module per2axi_req_channel
    assign axi_master_aw_lock_o   = '0;
    assign axi_master_aw_cache_o  = '0;
    assign axi_master_aw_qos_o    = '0;
-   assign axi_master_aw_user_o   = '0;
+   assign axi_master_aw_user_o   = axi_axuser_i[axi_master_aw_id_o];
    
    assign axi_master_ar_prot_o   = '0;
    assign axi_master_ar_region_o = '0;
@@ -196,7 +201,7 @@ module per2axi_req_channel
    assign axi_master_ar_lock_o   = '0;
    assign axi_master_ar_cache_o  = '0;
    assign axi_master_ar_qos_o    = '0;
-   assign axi_master_ar_user_o   = '0;
+   assign axi_master_ar_user_o   = axi_axuser_i[axi_master_aw_id_o];
    
    assign axi_master_w_user_o    = '0;
    

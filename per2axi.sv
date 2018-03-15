@@ -43,6 +43,11 @@ module per2axi
    output logic [PER_ID_WIDTH-1:0]   per_slave_r_id_o,
    output logic [31:0]               per_slave_r_rdata_o,
 
+   // TRYX CTRL
+   input  logic [NB_CORES-1:0][AXI_USER_WIDTH-1:0] axi_axuser_i,
+   output logic [NB_CORES-1:0]                     axi_xresp_slverr_o,
+   output logic [NB_CORES-1:0]                     axi_xresp_valid_o,
+
    // AXI4 MASTER
    //***************************************
    // WRITE ADDRESS CHANNEL
@@ -161,6 +166,7 @@ module per2axi
    // PER2AXI REQUEST CHANNEL
    per2axi_req_channel
    #(
+      .NB_CORES         ( NB_CORES        ),
       .PER_ID_WIDTH     ( PER_ID_WIDTH    ),
       .PER_ADDR_WIDTH   ( PER_ADDR_WIDTH  ),
       .AXI_ADDR_WIDTH   ( AXI_ADDR_WIDTH  ),
@@ -177,6 +183,8 @@ module per2axi
       .per_slave_be_i          ( per_slave_be_i     ),
       .per_slave_id_i          ( per_slave_id_i     ),
       .per_slave_gnt_o         ( per_slave_gnt_o    ),
+
+      .axi_axuser_i            ( axi_axuser_i       ),
 
       .axi_master_aw_valid_o   ( s_aw_valid         ),
       .axi_master_aw_addr_o    ( s_aw_addr          ),
@@ -221,6 +229,7 @@ module per2axi
    // PER2AXI RESPONSE CHANNEL
    per2axi_res_channel
    #(
+      .NB_CORES         ( NB_CORES         ),
       .PER_ID_WIDTH     ( PER_ID_WIDTH     ),
       .PER_ADDR_WIDTH   ( PER_ADDR_WIDTH   ),
       .AXI_ID_WIDTH     ( AXI_ID_WIDTH     ),
@@ -237,6 +246,9 @@ module per2axi
       .per_slave_r_opc_o     ( per_slave_r_opc_o    ),
       .per_slave_r_id_o      ( per_slave_r_id_o     ),
       .per_slave_r_rdata_o   ( per_slave_r_rdata_o  ),
+
+      .axi_xresp_slverr_o    ( axi_xresp_slverr_o   ),
+      .axi_xresp_valid_o     ( axi_xresp_valid_o    ),
 
       .axi_master_r_valid_i  ( s_r_valid            ),
       .axi_master_r_data_i   ( s_r_data             ),
