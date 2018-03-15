@@ -44,7 +44,7 @@ module per2axi_req_channel
    // AXI4 MASTER
    //***************************************
    // WRITE ADDRESS CHANNEL
-   output  logic                     axi_master_aw_valid_o,
+   output logic                      axi_master_aw_valid_o,
    output logic [AXI_ADDR_WIDTH-1:0] axi_master_aw_addr_o,
    output logic [2:0]                axi_master_aw_prot_o,
    output logic [3:0]                axi_master_aw_region_o,
@@ -88,7 +88,32 @@ module per2axi_req_channel
 );
 
    integer                            i;
-   
+
+   // AWATOP signal for AXI-5
+   // TODO: When upgrading to AXI-5 declare as output
+   logic [5:0]  awatop;
+
+   // Input data signal
+   logic [31:0] per_slave_wdata;
+   logic        inv_wdata;
+
+   // Atomic operation defines
+   parameter AWATOP_SWAP    = 6'b110000;
+   parameter AWATOP_COMPARE = 6'b110001;
+
+   parameter AWATOP_STORE   = 3'b010;
+   parameter AWATOP_LOAD    = 3'b100;
+
+   parameter AWATOP_ADD     = 3'b000;
+   parameter AWATOP_CLR     = 3'b001;
+   parameter AWATOP_XOR     = 3'b010;
+   parameter AWATOP_SET     = 3'b011;
+   parameter AWATOP_SMAX    = 3'b100;
+   parameter AWATOP_SMIN    = 3'b101;
+   parameter AWATOP_UMAX    = 3'b110;
+   parameter AWATOP_UMIN    = 3'b111;
+
+
    // AXI REQUEST GENERATION
    always_comb
      begin
@@ -120,18 +145,66 @@ module per2axi_req_channel
     begin
         axi_master_aw_lock_o   = 1'b0;
         axi_master_ar_lock_o   = 1'b0;
+        awatop                 = 6'b000000;
+        inv_wdata              = 1'b0;
 
-        if (per_slave_atop_i == AMO_LR) begin       // ATOMIC LOAD-RESERVED OPERATION
-            axi_master_ar_lock_o   = 1'b1;
-        end
-        else if (per_slave_atop_i == AMO_SC) begin  // ATOMIC STORE-CONDITIONAL OPERATION
-            axi_master_aw_lock_o   = 1'b1;
+        if (per_slave_atop_i[5] == 1'b1) begin
+            unique case (per_slave_atop_i[4:0])
+                AMO_LR: begin                       // ATOMIC LOAD-RESERVED OPERATION
+                    axi_master_ar_lock_o = 1'b1;
+                end
+                AMO_SC: begin                       // ATOMIC STORE-CONDITIONAL OPERATION
+                    axi_master_aw_lock_o = 1'b1;
+                end
+                AMO_SWAP: begin
+                    awatop    = AWATOP_SWAP;
+                end
+                AMO_ADD: begin
+                    awatop    = {AWATOP_LOAD, AWATOP_ADD};
+                end
+                AMO_XOR: begin
+                    awatop    = {AWATOP_LOAD, AWATOP_XOR};
+                end
+                AMO_AND: begin
+                    awatop    = {AWATOP_LOAD, AWATOP_CLR};
+                    inv_wdata = 1'b1; // Invert data to emulate an AND with a clear
+                end
+                AMO_OR: begin
+                    awatop    = {AWATOP_LOAD, AWATOP_SET};
+                end
+                AMO_MIN: begin
+                    awatop    = {AWATOP_LOAD, AWATOP_SMIN};
+                end
+                AMO_MAX: begin
+                    awatop    = {AWATOP_LOAD, AWATOP_SMAX};
+                end
+                AMO_MINU: begin
+                    awatop    = {AWATOP_LOAD, AWATOP_UMIN};
+                end
+                AMO_MAXU: begin
+                    awatop    = {AWATOP_LOAD, AWATOP_UMAX};
+                end
+                default : begin end
+            endcase
         end
     end
 
    // AXI ADDRESS GENERATION
-   assign axi_master_aw_addr_o = per_slave_add_i;
-   assign axi_master_ar_addr_o = per_slave_add_i;
+   // assign axi_master_aw_addr_o = per_slave_add_i;
+   // assign axi_master_ar_addr_o = per_slave_add_i;
+// FIXME AWATOP-HACK set address to 0 for unsuported AMO instructions
+    always_comb
+    begin
+        if(awatop == 6'b000000) begin
+            axi_master_aw_addr_o = per_slave_add_i;
+            axi_master_ar_addr_o = per_slave_add_i;
+        end
+        else begin
+            axi_master_aw_addr_o = '0;
+            axi_master_ar_addr_o = '0;
+        end
+    end
+// END FIXME AWATOP-HACK
 
    // AXI ID GENERATION - ONEHOT TO BIN DECODING
    always_comb
@@ -147,25 +220,33 @@ module per2axi_req_channel
                end
           end
      end
-   
+
+
    // AXI WRITE DATA/STROBE GENERATION
    always_comb
      begin
+        if (inv_wdata == 1'b1) begin
+            per_slave_wdata = ~per_slave_wdata_i;
+        end
+        else begin
+            per_slave_wdata = per_slave_wdata_i;
+        end
+
         if ( per_slave_add_i[2] == 1'b0 )
           begin
-             axi_master_w_data_o = {32'b0,per_slave_wdata_i};
+             axi_master_w_data_o = {32'b0,per_slave_wdata};
              axi_master_w_strb_o = {4'b0,per_slave_be_i};
           end
         else
           begin
-             axi_master_w_data_o = {per_slave_wdata_i,32'b0};
+             axi_master_w_data_o = {per_slave_wdata,32'b0};
              axi_master_w_strb_o = {per_slave_be_i,4'b0};
           end
      end
-   
+
    // PERIPHERAL INTERCONNECT GRANT GENERATION
    assign per_slave_gnt_o = axi_master_aw_ready_i && axi_master_ar_ready_i;
-   
+
    always_comb
      begin
         axi_master_ar_size_o = 3'b000;
