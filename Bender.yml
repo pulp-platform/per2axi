@@ -1,0 +1,11 @@
+package:
+  name: per2axi
+
+dependencies:
+  axi_slice: { git: "https://github.com/pulp-platform/axi_slice.git", version: 1.1.1 }
+
+sources:
+  - per2axi_busy_unit.sv
+  - per2axi_req_channel.sv
+  - per2axi_res_channel.sv
+  - per2axi.sv
