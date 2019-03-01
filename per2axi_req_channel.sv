@@ -52,6 +52,7 @@ module per2axi_req_channel
    output logic [2:0]                axi_master_aw_size_o,
    output logic [1:0]                axi_master_aw_burst_o,
    output logic                      axi_master_aw_lock_o,
+   output logic [5:0]                axi_master_aw_atop_o,
    output logic [3:0]                axi_master_aw_cache_o,
    output logic [3:0]                axi_master_aw_qos_o,
    output logic [AXI_ID_WIDTH-1:0]   axi_master_aw_id_o,
@@ -82,6 +83,10 @@ module per2axi_req_channel
    input  logic                      axi_master_w_ready_i,
 
    // CONTROL SIGNALS
+   output logic                      atop_req_o,
+   output logic [AXI_ID_WIDTH-1:0]   atop_id_o,
+   output logic [AXI_ADDR_WIDTH-1:0] atop_add_o,
+
    output logic                      trans_req_o,
    output logic [AXI_ID_WIDTH-1:0]   trans_id_o,
    output logic [AXI_ADDR_WIDTH-1:0] trans_add_o
@@ -113,6 +118,7 @@ module per2axi_req_channel
    parameter AWATOP_UMAX    = 3'b110;
    parameter AWATOP_UMIN    = 3'b111;
 
+   assign axi_master_aw_atop_o = awatop;
 
    // AXI REQUEST GENERATION
    always_comb
@@ -190,21 +196,8 @@ module per2axi_req_channel
     end
 
    // AXI ADDRESS GENERATION
-   // assign axi_master_aw_addr_o = per_slave_add_i;
-   // assign axi_master_ar_addr_o = per_slave_add_i;
-// FIXME AWATOP-HACK set address to 0 for unsuported AMO instructions
-    always_comb
-    begin
-        if(awatop == 6'b000000) begin
-            axi_master_aw_addr_o = per_slave_add_i;
-            axi_master_ar_addr_o = per_slave_add_i;
-        end
-        else begin
-            axi_master_aw_addr_o = '0;
-            axi_master_ar_addr_o = '0;
-        end
-    end
-// END FIXME AWATOP-HACK
+   assign axi_master_aw_addr_o = per_slave_add_i;
+   assign axi_master_ar_addr_o = per_slave_add_i;
 
    // AXI ID GENERATION - ONEHOT TO BIN DECODING
    always_comb
@@ -283,6 +276,10 @@ module per2axi_req_channel
    assign trans_req_o = axi_master_ar_valid_o;
    assign trans_id_o  = axi_master_ar_id_o;
    assign trans_add_o = axi_master_ar_addr_o;
+   
+   assign atop_req_o  = (axi_master_aw_atop_o[5:3] == AWATOP_STORE) ? 1'b0 : |axi_master_aw_atop_o;
+   assign atop_id_o   = axi_master_aw_id_o;
+   assign atop_add_o  = axi_master_aw_addr_o;
 
    // UNUSED SIGNALS
    assign axi_master_aw_prot_o   = '0;

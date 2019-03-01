@@ -60,6 +60,7 @@ module per2axi
    output logic [2:0]                axi_master_aw_size_o,
    output logic [1:0]                axi_master_aw_burst_o,
    output logic                      axi_master_aw_lock_o,
+   output logic [5:0]                axi_master_aw_atop_o,
    output logic [3:0]                axi_master_aw_cache_o,
    output logic [3:0]                axi_master_aw_qos_o,
    output logic [AXI_ID_WIDTH-1:0]   axi_master_aw_id_o,
@@ -118,6 +119,7 @@ module per2axi
    logic [2:0]                        s_aw_size;
    logic [1:0]                        s_aw_burst;
    logic                              s_aw_lock;
+   logic [5:0]                        s_aw_atop;
    logic [3:0]                        s_aw_cache;
    logic [3:0]                        s_aw_qos;
    logic [AXI_ID_WIDTH-1:0]           s_aw_id;
@@ -159,6 +161,10 @@ module per2axi
    logic [AXI_USER_WIDTH-1:0]         s_b_user;
    logic                              s_b_ready;
 
+   logic                              s_atop_req;
+   logic [AXI_ID_WIDTH-1:0]           s_atop_id;
+   logic [AXI_ADDR_WIDTH-1:0]         s_atop_add;
+   
    logic                              s_trans_req;
    logic [AXI_ID_WIDTH-1:0]           s_trans_id;
    logic [AXI_ADDR_WIDTH-1:0]         s_trans_add;
@@ -196,6 +202,7 @@ module per2axi
       .axi_master_aw_size_o    ( s_aw_size          ),
       .axi_master_aw_burst_o   ( s_aw_burst         ),
       .axi_master_aw_lock_o    ( s_aw_lock          ),
+      .axi_master_aw_atop_o    ( s_aw_atop          ),
       .axi_master_aw_cache_o   ( s_aw_cache         ),
       .axi_master_aw_qos_o     ( s_aw_qos           ),
       .axi_master_aw_id_o      ( s_aw_id            ),
@@ -223,6 +230,10 @@ module per2axi
       .axi_master_w_last_o     ( s_w_last           ),
       .axi_master_w_ready_i    ( s_w_ready          ),
 
+      .atop_req_o              ( s_atop_req         ),
+      .atop_id_o               ( s_atop_id          ),
+      .atop_add_o              ( s_atop_add         ),
+      
       .trans_req_o             ( s_trans_req        ),
       .trans_id_o              ( s_trans_id         ),
       .trans_add_o             ( s_trans_add        )
@@ -266,6 +277,10 @@ module per2axi
       .axi_master_b_user_i   ( s_b_user             ),
       .axi_master_b_ready_o  ( s_b_ready            ),
 
+      .atop_req_i            ( s_atop_req           ),
+      .atop_id_i             ( s_atop_id            ),
+      .atop_add_i            ( s_atop_add           ),
+      
       .trans_req_i           ( s_trans_req          ),
       .trans_id_i            ( s_trans_id           ),
       .trans_add_i           ( s_trans_add          )
@@ -311,6 +326,7 @@ module per2axi
       .slave_size_i    ( s_aw_size              ),
       .slave_burst_i   ( s_aw_burst             ),
       .slave_lock_i    ( s_aw_lock              ),
+      .slave_atop_i    ( s_aw_atop              ),
       .slave_cache_i   ( s_aw_cache             ),
       .slave_qos_i     ( s_aw_qos               ),
       .slave_id_i      ( s_aw_id                ),
@@ -325,6 +341,7 @@ module per2axi
       .master_size_o   ( axi_master_aw_size_o   ),
       .master_burst_o  ( axi_master_aw_burst_o  ),
       .master_lock_o   ( axi_master_aw_lock_o   ),
+      .master_atop_o   ( axi_master_aw_atop_o   ),
       .master_cache_o  ( axi_master_aw_cache_o  ),
       .master_qos_o    ( axi_master_aw_qos_o    ),
       .master_id_o     ( axi_master_aw_id_o     ),
