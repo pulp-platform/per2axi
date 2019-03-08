@@ -3,6 +3,7 @@ package:
 
 dependencies:
   axi_slice: { git: "https://github.com/pulp-platform/axi_slice.git", rev: atomics }
+  riscv: { git: "https://github.com/pulp-platform/riscv.git", rev: atomics } # TODO: proper way to get the AMO_ symbols?
 
 sources:
   - src/per2axi_busy_unit.sv
