@@ -5,3 +5,16 @@ per2axi:
     src/per2axi_res_channel.sv,
     src/per2axi.sv,
   ]
+  jg_slint_top_name: [
+    per2axi_wrap
+  ]
+  jg_slint_elab_opt: [    
+  ]
+  jg_slint_postelab_cmds: [
+  ]
+  jg_slint_clocks: [
+    clk_i,
+  ]
+  jg_slint_resets: [
+    ~rst_ni,
+  ]
