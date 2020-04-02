@@ -98,6 +98,10 @@ module per2axi_res_channel
           begin
              s_read_add_buf[trans_id_i] <= trans_add_i[2];
           end
+	  else
+	    begin
+	       s_read_add_buf <= s_read_add_buf;
+	    end
       end
    end
    
