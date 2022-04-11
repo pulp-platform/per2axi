@@ -242,10 +242,14 @@ module per2axi_req_channel
    assign axi_master_ar_size_o = axi_master_aw_size_o;
 
    // Assumptions
-   `ifndef TARGET_SYNTHESIS
+`ifndef TARGET_SYNTHESIS
+  `ifndef PULP_FPGA_EMUL
+  `ifndef VERILATOR
       default disable iff (!rst_ni);
       assume property (@(posedge clk_i) per_slave_req_i |-> per_slave_be_i[per_slave_add_i[1:0]])
-         else $error("Byte enable of addressed byte must be active");
+        else $error("Byte enable of addressed byte must be active");
+  `endif
+  `endif
       logic [1:0] be_trailing_zeros;
       lzc #(
          .WIDTH   (4),
@@ -255,10 +259,14 @@ module per2axi_req_channel
          .cnt_o   (be_trailing_zeros),
          .empty_o (/* unused */)
       );
+  `ifndef PULP_FPGA_EMUL
+  `ifndef VERILATOR
       assume property (@(posedge clk_i) per_slave_req_i
             |-> per_slave_add_i[1:0] == be_trailing_zeros)
-         else $error("No byte enable below addressed byte may be active!");
-   `endif
+        else $error("No byte enable below addressed byte may be active!");
+  `endif
+  `endif
+`endif
 
    // use FIXED burst type, length is anyway 0
    assign axi_master_aw_burst_o = 2'b00;
