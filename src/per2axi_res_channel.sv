@@ -97,59 +97,55 @@ module per2axi_res_channel
 
    // Atomic memory operations
 
-   generate
-      for (genvar i = 0; i < PER_ID_WIDTH; i++) begin
-         always_comb begin
-            atop_state_d[i] = atop_state_q[i];
+   for (genvar i = 0; i < PER_ID_WIDTH; i++) begin : gen_amo
+      always_comb begin
+         atop_state_d[i] = atop_state_q[i];
 
-            unique case (atop_state_q[i])
-               NONE: begin
-                  if (atop_req_i && (atop_id_i == i)) begin
-                     atop_state_d[i] = REQUEST;
-                  end
+         unique case (atop_state_q[i])
+            NONE: begin
+               if (atop_req_i && (atop_id_i == i)) begin
+                  atop_state_d[i] = REQUEST;
                end
-
-               REQUEST: begin
-                  if (axi_master_r_valid_i && axi_master_r_ready_o && (axi_master_r_id_i == i)) begin
-                     atop_state_d[i] = WAIT_B;
-                  end
-                  if (axi_master_b_valid_i && axi_master_b_ready_o && (axi_master_b_id_i == i)) begin
-                     atop_state_d[i] = WAIT_R;
-                  end
-                  if (axi_master_r_valid_i && axi_master_r_ready_o && (axi_master_r_id_i == i) &&
-                      axi_master_b_valid_i && axi_master_b_ready_o && (axi_master_b_id_i == i)) begin
-                     atop_state_d[i] = NONE;
-                  end
-               end
-
-               WAIT_R: begin
-                  if (axi_master_r_valid_i && axi_master_r_ready_o && (axi_master_r_id_i == i)) begin
-                     atop_state_d[i] = NONE;
-                  end
-               end
-
-               WAIT_B: begin
-                  if (axi_master_b_valid_i && axi_master_b_ready_o && (axi_master_b_id_i == i)) begin
-                     atop_state_d[i] = NONE;
-                  end
-               end
-
-               default : /* default */;
-            endcase
-
-
-         end
-
-         always_ff @(posedge clk_i or negedge rst_ni) begin
-            if(~rst_ni) begin
-               atop_state_q[i] <= NONE;
-            end else begin
-               atop_state_q[i] <= atop_state_d[i];
             end
-         end
 
+            REQUEST: begin
+               if (axi_master_r_valid_i && axi_master_r_ready_o && (axi_master_r_id_i == i)) begin
+                  atop_state_d[i] = WAIT_B;
+               end
+               if (axi_master_b_valid_i && axi_master_b_ready_o && (axi_master_b_id_i == i)) begin
+                  atop_state_d[i] = WAIT_R;
+               end
+               if (axi_master_r_valid_i && axi_master_r_ready_o && (axi_master_r_id_i == i) &&
+                   axi_master_b_valid_i && axi_master_b_ready_o && (axi_master_b_id_i == i)) begin
+                  atop_state_d[i] = NONE;
+               end
+            end
+
+            WAIT_R: begin
+               if (axi_master_r_valid_i && axi_master_r_ready_o && (axi_master_r_id_i == i)) begin
+                  atop_state_d[i] = NONE;
+               end
+            end
+
+            WAIT_B: begin
+               if (axi_master_b_valid_i && axi_master_b_ready_o && (axi_master_b_id_i == i)) begin
+                  atop_state_d[i] = NONE;
+               end
+            end
+
+            default : /* default */;
+         endcase
       end
-   endgenerate
+
+      always_ff @(posedge clk_i or negedge rst_ni) begin
+         if(~rst_ni) begin
+            atop_state_q[i] <= NONE;
+         end else begin
+            atop_state_q[i] <= atop_state_d[i];
+         end
+      end
+   end // block: gen_amo
+
 
    // STORES REQUEST ADDRESS BIT 2 ONLY IF A READ OPERATION OCCURS
    always_ff @ (posedge clk_i, negedge rst_ni)
