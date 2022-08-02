@@ -242,7 +242,7 @@ module per2axi_req_channel
    assign axi_master_ar_size_o = axi_master_aw_size_o;
 
    // Assumptions
-`ifndef TARGET_SYNTHESIS
+`ifndef SYNTHESIS
   `ifndef PULP_FPGA_EMUL
   `ifndef VERILATOR
       default disable iff (!rst_ni);
